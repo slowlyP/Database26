@@ -130,3 +130,162 @@ in (103,86)
 and city
 in('cheju', 'sunnyvale', 'dallas');
 
+use sakila;
+select *
+from address 
+where address2 is null; # address2 열에서 null인 데이터 조회
+
+select *
+from address
+where address2 is not null; # address2 열애서 null인 데이터 조회
+
+select *
+from address
+where address2 =''; # address2 열에서 null이 아닌 데이터 조회
+
+select * 
+from customer
+order by first_name; # first_name 열을 기준으로 정렬  
+
+select*
+from customer
+order by store_id, first_name; # store_id ,first_name 순으로 데이터 정렬
+
+select *
+from customer
+order by store_id desc , first_name asc; # ASC와 DESC를 조합하여 데이터 정렬
+
+
+select * 
+from customer
+order by customer_id asc limit 100, 10; # limit 으로 101 번째부터 10개의 데이터 조회
+
+
+select * 
+from customer 
+order by customer_id asc limit 10 offset 100; # 데이터 100개를 건너뛰고 101번째부터 데이터 10개 조회
+
+# A% = A로 시작하는 모든 문자열
+# %A = A로 끝나는 모든 문자열
+# %A% = A가 포함된 모든 문자열
+
+select *
+from customer
+where first_name like 'a%'; # 첫번째 글자가 a로 시작하는 데이터 조회
+
+SELECT * 
+FROM customer
+where first_name like '%a';# a로 끝나는 모든 데이터 조회
+
+select *
+from customer
+where first_name 
+not like 'a%';  # 첫번째 글자가 a로 시작하지 않는 데이터만 조회 not를사용하면됨
+
+
+
+
+with cte (col_1) as(
+select 'a%bc' union all
+select 'a_bc' union all
+select 'abc'
+)
+select * from cte; 			# 특수문자를 포함한 임의의 테이블 생성
+
+with cte (col_1) as(
+select 'a%bc' union all
+select 'a_bc' union all
+select 'abc'
+)
+select * from cte where col_1 like '%' ;
+ # 특수문자 %를 포함한 데이터 조회를 했는데 제대로 안나옴 이럴때는 아래방법으로해야함
+
+with cte (col_1) as (
+select 'a%bc' union all
+select 'a_bc' union all
+select 'abc'
+)
+select * from cte where col_1 like '%#%%' escape '#';
+
+
+
+select * 
+from customer 
+where first_name
+like 'a_'; # a로 시작하면서 문자열 길이가 2인데이터조회
+
+
+select * 
+from customer 
+where first_name
+like 'a__'; # a로 시작하면서 문자열 길이가 3인데이터 조회
+				# 추가로 문자열 길이로만 조회하려면 a와같은 것 입력 없이'___' 이런식으로 입력하면됨 언더바의 갯수
+                
+
+select * 
+from customer
+where first_name
+like 'a_r%';    # a와 r로 시작하는 문자열 조회
+
+
+
+#===========regexp========= 정규표현식
+
+# . 줄바꿈 문자(\n)을 제외한 임의의 한 문자를 의미.
+# * 해당 문자 패턴이 0번 이상 반복한다.
+# + 해당 문자 패턴이 1번이상 반복한다.
+# ^ 문자열의 처음을 의미한다.
+# $ 문자열의 끝을 의미한다.
+# | or을 의미한다.
+# [...] 대괄호 ([]) 안에 있는 어떠한 문자를 의미한다.
+# [^...] 대괄호 ([]) 안에 있지 않은 어떠한 문자를 의미한다.
+# {n} 반복되는 횟수를 지정한다.
+# {m,n} 반복되는 횟수의 최솟값과 최댓값을 지정한다.
+
+
+
+select *
+from customer where first_name regexp '^k|n$'; # ^,|,$ 를 사용한 데이터 조회 ( k로 시작하거나 n으로 끝나는 데이터 조회)
+
+
+select * 
+from customer 
+where first_name 
+regexp 'k[l-n]';				# first_name 열의 문자열 데이터에서 k뒤에 l과n사이의 글자가 포함되어 있는 데이터
+
+select * 
+from customer
+where first_name
+regexp 'k[^l-n]';# [^...] 대괄호 ([]) 안에 있지 않은 어떠한 문자를 의미한다. //<< k와 함께 l과 n사이의 글자를 포함하지 않는 데이터를 조회한것
+
+select *
+from customer
+where first_name like '_______'
+and first_name regexp 'a[l-n]'
+and first_name regexp 'o$';    # 와일드카드 조합으로 데이터 조회 (first_name 열에서 총7글자이고 a뒤에 l과 n사이의 글자가 있고 마지막 글자는 o인 문자열 데이터를 조회
+
+
+
+select special_features
+from film group by special_features; # special_features 열의 데이터를 그룹화
+
+select rating 	
+from film
+group by rating;  # rating 열의 데이터를 그룹화(special_features 열에서 deleted scenes,trailers 등으로 데이터가 그룹화
+				  # rating 열에서는 pg,g 등으로 데이터가 그룹화
+
+
+
+# COUNT로 그룹화한 열의 데이터 개수 세기
+
+SELECT special_features, COUNT(*) 
+AS CNT FROM FILM
+GROUP BY SPECIAL_FEATURES;    # COUNT 함수로 그룹에 속한 데이터 개수 세기
+
+
+SELECT special_features, rating, COUNT(*)
+AS CNT FROM FILM
+GROUP BY SPECIAL_FEATURES, RATING
+ORDER BY SPECIAL_FEATURES, RATING, CNT desc; # 두 열의 데이터 그룹에 속한 데이터 개수 세기
+												# select 문에 사용한 열을 반드시 groupby 절에도 사용해야함
+									
