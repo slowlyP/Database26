@@ -289,3 +289,334 @@ GROUP BY SPECIAL_FEATURES, RATING
 ORDER BY SPECIAL_FEATURES, RATING, CNT desc; # 두 열의 데이터 그룹에 속한 데이터 개수 세기
 												# select 문에 사용한 열을 반드시 groupby 절에도 사용해야함
 									
+use doitsql;
+
+create table doit_increment(
+col_1 int auto_increment primary key,
+col_2 varchar(50),
+col_3 int
+);
+insert into doit_increment (col_2, col_3) values ('1 자동 입력',1);
+insert into doit_increment (col_2, col_3) values ('1 자동 입력',2);
+select *
+from doit_increment;
+
+insert into doit_increment (col_1, col_2 ,col_3) values (3,'3 자동 입력',3);
+select * 
+from doit_increment;
+
+
+# 조회결과를 다른테이블에 입력하기
+create table doit_insert_select_from(
+col_1 int,								#연습용 첫번째 테이블 생성
+col_2 varchar(10)
+);
+
+create table doit_insert_select_to(
+col_1 int,								#연습용 두번째 테이블 생성
+col_2 varchar(10)
+);
+
+insert into doit_insert_select_from values(1, 'do');			# 첫번째 테이블에 데이터를 입력
+insert into doit_insert_select_from values(2, 'it');
+insert into doit_insert_select_from values(3, 'mysql');
+
+insert into doit_insert_select_to						# 첫번째 테이블의 데이터를 조회해 두번째 테이블에 입력
+select * 
+from doit_insert_select_from;
+
+select * 												# 두번째 테이블의 데이터 조회
+from doit_insert_select_to;
+
+create table doit_select_new 
+as (select * from doit_insert_select_from);				# 새 테이블에 조회 결과 입력하기
+
+select * 
+from doit_select_new;		#create table로 새 테이블에 결과 입력
+
+
+# 외래키로 연결되어있는 테이블에 데이터 입력 및 삭제하기
+
+# 부모 테이블과 자식 테이블 생성
+
+create table doit_parent (col_1 int primary key);
+create table doit_child (col_1 int);
+
+alter table doit_child
+add foreign key (col_1) references doit_parent(col_1);
+
+# 부모테이블을 삭제하고싶다면 자식테이블을 먼저 삭제해야함.
+
+# 싱수형 데이터가 있는 데이블 생성
+
+use doitsql;
+create table doit_float(col_1 float);
+insert into doit_float values (0.7);
+select * 
+from doit_float where col_1 = 0.7;
+
+
+use sakila;
+select
+	a.customer_id, a.store_id, a.first_name, a.last_name, a.email, a.address_id
+    as a_address_id,
+    b.address_id as b_address_id, b.address, b.district, b.city_id, b.postal_code, b.phone, b.location
+    from customer as a
+    inner join address as b on a.address_id = b.address_id
+    where a.first_name = 'rosa';
+    
+    
+# 3개의 테이블을 조인한 테이블에서 조건에 맞는 데이터 조회
+
+select
+a.customer_id,
+a.first_name,
+a.last_name,
+b.address_id,
+b.address,
+b.district,
+b.postal_code,
+c.city_id,
+c.city
+from customer a
+join address b on a.address_id = b.address_id
+join city c on b.city_id = c.city_id
+where a.first_name = 'rosa';
+
+#left outer join 으로 외부 조인하기
+
+select									# left outer join 으로 조회한 결과에서 null만 조회
+	a.address, a.address_id as a_address_id,
+    b.address_id as b_address_id, b.store_id
+from address as a
+left outer join store as b on a.address_id = b.address_id
+where b.address_id is null;
+
+
+
+select									# right outer join 으로 외부 조인
+	a.address, a.address_id as a_address_id,
+    b.address_id as b_address_id, b.store_id
+from address as a
+right outer join store as b on a.address_id = b.address_id;
+
+
+
+
+
+
+
+
+
+#cross join 을 위한 샘플데이터 생성
+
+create table doit_cross1(num int);
+create table doit_cross2(name varchar(10));
+insert into doit_cross1 values(1),(2),(3);
+insert into doit_cross2 values('do'),('it'),('sql');
+
+select					# cross join을 적용한 쿼리
+a.num,b.name
+from doit_cross1 as a
+cross join doit_cross2 as b
+order by a.num;
+
+									# where 절을 사용한 cross join
+select					
+a.num,b.name
+from doit_cross1 as a
+cross join doit_cross2 as b
+order by a.num = 1;
+
+select a.customer_id as a_customer_id, b.customer_id as b_customr_id
+from customer as a
+join customer as b on a.customer_id = b.customer_id;
+
+select			# self join을 적용한 쿼리   /// payment테이블에서 전일대비 수익이 얼마인지 알아보는 쿼리
+	a.payment_id, a.amount, b.payment_id, b.amount, b.amount - a.amount as profit_amount
+from payment as a
+	left outer join payment as b on a.payment_id = b.payment_id -1;
+    
+# where 절에 서브 쿼리 사용하기
+
+select * 
+from customer
+where customer_id = (select customer_id from customer where first_name = 'rosa');
+
+# in을 활용한 다중 행 서브 쿼리 적용
+
+select *
+from customer
+where first_name in ('rosa','ana');
+
+# in을 활용한 다중 행 서브 쿼리 적용 2
+select *
+from customer
+where customer_id in (select customer_id from customer where first_name  in('rosa','ana'));
+
+SELECT				# not in 을 활용한 서브 쿼리 적용
+    a.film_id,
+    a.title
+FROM film AS a
+JOIN film_category AS b
+    ON a.film_id = b.film_id
+JOIN category AS c
+    ON b.category_id = c.category_id
+WHERE c.name = 'Action';
+
+
+# =any 를 활용한 서브 쿼리적용
+SELECT *                      -- 조회한다 (모든 컬럼)
+FROM customer                 -- customer 테이블에서
+WHERE customer_id             -- customer_id 컬럼이
+      = ANY (                 -- 아래 서브쿼리 결과 중 하나라도 같으면
+          
+          SELECT customer_id  -- customer_id만 조회
+          FROM customer       -- customer 테이블에서
+          WHERE first_name    -- first_name 컬럼이
+                IN ('rosa','ana') -- 'rosa' 또는 'ana' 인 경우
+                );
+                
+								# <any 를 활용한 서브 쿼리 적용     
+SELECT *                         -- 고객 테이블의 모든 컬럼 조회
+FROM customer                    -- customer 테이블에서
+WHERE customer_id                -- customer_id 값이
+      < ANY (                    -- 아래 서브쿼리 결과 중 '하나라도' 큰 값이 있으면 참
+          
+          SELECT customer_id     -- 비교에 사용할 customer_id 목록 생성
+          FROM customer          -- customer 테이블에서
+          WHERE first_name       -- first_name 컬럼이
+                IN ('rosa','ana')-- 'rosa' 또는 'ana' 인 고객만 선택
+      );
+								# >any 를 활용한 서브 쿼리 적용
+SELECT *                         -- customer 테이블의 모든 컬럼 조회
+FROM customer                    -- customer 테이블에서
+WHERE customer_id                -- customer_id 값이
+      > ANY (                    -- 아래 서브쿼리 결과 중 '하나라도' 작은 값이 있으면 참
+          
+          SELECT customer_id     -- 비교에 사용할 customer_id 목록 생성
+          FROM customer          -- customer 테이블에서
+          WHERE first_name       -- first_name 컬럼이
+                IN ('rosa','ana')-- 'rosa' 또는 'ana' 인 고객만 선택
+      );
+
+
+# EXISTS 를 활용한 서브 쿼리 적용 : TRUE 를 반환하는경우
+
+SELECT *                             -- customer 테이블의 모든 컬럼 조회
+FROM customer                        -- customer 테이블에서
+WHERE EXISTS (                       -- 아래 서브쿼리가 '결과를 하나라도 반환하면' 참
+          
+          SELECT customer_id         -- 실제 값은 중요하지 않음 (존재 여부만 확인)
+          FROM customer              -- customer 테이블에서
+          WHERE first_name           -- first_name 컬럼이
+                IN ('rosa','ana')    -- 'rosa' 또는 'ana' 인 행이 존재하는지 검사
+      );
+      
+      # exists를 활용한 서브쿼리적용 : false 를 반환하는경우
+SELECT *                             -- customer 테이블의 모든 컬럼 조회
+FROM customer                        -- customer 테이블에서
+WHERE EXISTS (                       -- 아래 서브쿼리가 결과를 하나라도 반환하면 TRUE
+          
+          SELECT customer_id         -- 값 자체는 중요하지 않음 (존재 여부만 확인)
+          FROM customer              -- customer 테이블에서
+          WHERE first_name           -- first_name 컬럼이
+                IN ('king')          -- 'king' 인 고객이 존재하는지 검사
+      );
+
+#				not exists 를 활용한 서브쿼리적용 : true를 반환하는 경우 ( 위에는 그냥 exists로 king을 찾았지만 없어서 false처리되었지만
+	#																여긴 not 을사용해서 king이없어도 customer테이블 전체가 출력된것)
+SELECT *                             -- customer 테이블의 모든 컬럼 조회
+FROM customer                        -- customer 테이블에서
+WHERE NOT EXISTS (                   -- 아래 서브쿼리가 '결과를 하나라도 반환하면' FALSE
+                                     -- 결과가 '하나도 없을 때만' TRUE
+          
+          SELECT customer_id         -- 값 자체는 중요하지 않음 (존재 여부만 확인)
+          FROM customer              -- customer 테이블에서
+          WHERE first_name           -- first_name 컬럼이
+                IN ('king')          -- 'king' 인 고객이 존재하는지 검사
+      );
+
+
+# 							ALL을 활용한 서브 쿼리적용
+SELECT *                             -- customer 테이블의 모든 컬럼 조회
+FROM customer                        -- customer 테이블에서
+WHERE customer_id                   -- customer_id 값이
+      = ALL (                       -- 아래 서브쿼리 결과 '모두와 같아야' TRUE
+          
+          SELECT customer_id        -- 비교 대상이 되는 customer_id 목록
+          FROM customer             -- customer 테이블에서
+          WHERE first_name          -- first_name 컬럼이
+                IN ('rosa','ana')   -- 'rosa' 또는 'ana' 인 고객만 선택
+      );
+
+
+# 						테이블 조인
+SELECT
+    a.film_id,               -- film 테이블의 영화 ID
+    a.title,                 -- 영화 제목
+    a.special_features,      -- 영화의 특수 기능 정보
+    c.name                   -- 영화가 속한 카테고리 이름
+FROM film AS a               -- film 테이블을 기준 테이블(a)로 사용
+INNER JOIN film_category AS b -- 영화와 카테고리를 연결하는 중간 테이블
+    ON a.film_id = b.film_id -- film과 film_category를 film_id로 연결
+INNER JOIN category AS c      -- 실제 카테고리 정보를 가진 테이블
+    ON b.category_id = c.category_id -- 중간 테이블과 category를 category_id로 연결
+WHERE a.film_id > 10          -- film_id가 10보다 크고
+  AND a.film_id < 20;         -- film_id가 20보다 작은 영화만 조회
+
+#						 from 절에 서브 쿼리 적용
+SELECT 
+    a.film_id,                -- film 테이블의 영화 ID
+    a.title,                  -- 영화 제목
+    a.special_features,       -- 영화의 특수 기능 정보
+    x.name                    -- 서브쿼리에서 가져온 카테고리 이름
+FROM film AS a                -- film 테이블을 기준 테이블(a)로 사용
+
+INNER JOIN (                  -- 서브쿼리 결과를 하나의 가상 테이블(x)처럼 JOIN
+    SELECT
+        b.film_id,            -- film_category 테이블의 film_id
+        c.name                -- category 테이블의 카테고리 이름
+    FROM film_category AS b   -- 영화-카테고리 중간 테이블
+    INNER JOIN category AS c  -- 카테고리 정보 테이블
+        ON b.category_id = c.category_id -- film_category와 category 연결
+    WHERE b.film_id > 10      -- film_id가 10보다 크고
+      AND b.film_id < 20      -- film_id가 20보다 작은 영화만 선택
+
+) AS x                        -- 서브쿼리 결과에 별칭 x 부여
+
+ON a.film_id = x.film_id;     -- film 테이블과 서브쿼리를 film_id로 연결
+
+SELECT
+    a.film_id,               -- film 테이블의 영화 ID
+    a.title,                 -- 영화 제목
+    a.special_features,      -- 영화의 특수 기능 정보
+    c.name                   -- 영화 카테고리 이름
+FROM film AS a               -- 영화 테이블
+INNER JOIN film_category AS b -- 영화-카테고리 중간 테이블
+    ON a.film_id = b.film_id -- film과 film_category 연결
+INNER JOIN category AS c      -- 카테고리 테이블
+    ON b.category_id = c.category_id -- 중간 테이블과 category 연결
+WHERE a.film_id > 10          -- film_id가 10보다 크고
+  AND a.film_id < 20;         -- film_id가 20보다 작은 영화만 조회
+  
+  
+		
+												# 							select 절에 서브 쿼리 적용
+SELECT
+    a.film_id,                    -- film 테이블의 영화 ID
+    a.title,                      -- 영화 제목
+    a.special_features,           -- 영화의 특수 기능 정보
+    (SELECT c.name                -- 해당 영화의 카테고리 이름을 가져오는 서브쿼리
+     FROM film_category AS b      -- 영화-카테고리 중간 테이블
+     INNER JOIN category AS c     -- 카테고리 정보 테이블
+         ON b.category_id = c.category_id -- film_category와 category 연결
+     WHERE a.film_id = b.film_id  -- 바깥 film(a)과 연결하는 조건 (상관 서브쿼리)
+    ) AS name                     -- 서브쿼리 결과를 name 컬럼으로 표시
+FROM film AS a                    -- film 테이블을 기준으로 조회
+WHERE a.film_id > 10              -- film_id가 10보다 크고
+  AND a.film_id < 20;             -- film_id가 20보다 작은 영화만 조회
+
+
+  
+
