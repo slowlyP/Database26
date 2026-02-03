@@ -27,6 +27,11 @@ VALUES ('kkw','1234','김기원','admin',True), ('lhj','2345','임효정','manag
 ('kdg','3456','김도균','user',True),('ksb','4567','김수빈','user',True),
 ('kjy','5678','김지영','user',True),('song','1234','송명근','admin',True);
 
+#계정 활성화
+UPDATE members
+SET active = 1
+WHERE uid = 'song';
+
 
 
 select * from members; # 더미데이터 확인
@@ -79,3 +84,110 @@ VALUES
 
 select *
 FROM scores;
+
+# 기본 정보 조회(INNER JOIN) <<많이 씀
+# 성적 데이터가 존재하는 회원만 조회합니다. 이름, 과목점수,평균, 등급을 가져오는 쿼리.
+SELECT
+	m.name AS 이름,
+    m.uid AS 아이디,
+    s.korean AS 국어,
+    s.english AS 영어,
+    s.math AS 수학,
+    s.total AS 총점,
+    s.average AS 평균,
+    s.grade AS 등급
+From members m
+
+join scores s on m.id = s.member_id;
+# on 조건 : m.id = s.member_id와
+# 같이 두 테이블을 연결하는 핵심 키(PK-PK)를 정확히 지정
+
+
+Delete from scores where member_id = 2;
+# 성적 없는 회원도 포함 조회(LEFT JOIN)
+# 성적표가 아직 작성되지 않은 회원까지 모두 포함하여 명단을 만들때 사용.
+# 성적이 없으면 NULL로 표시
+    
+select
+	m.name AS 이름,
+    m.role AS 역할,
+    s.average AS 평균,
+    s.grade as 등급,
+    ifnull(s.grade,'미산출') as 상태 # 성적 없으면 '미산출' 표시
+from members m
+left join scores s on m.id = s.member_id;
+
+
+# boards 테이블 
+drop table boards;
+create table boards(
+	id int auto_increment primary key,
+    member_id int not null,
+    title varchar(200) not null,
+    content text not null,
+    created_at datetime default current_timestamp,
+    
+    foreign key (member_id) references members(id)
+);
+
+insert into boards (member_id, title, content)
+values 
+(4,'제목1','내용'),
+(9,'제목1','내용'),
+(10,'제목1','내용'),
+(11,'제목1','내용'),
+(12,'제목1','내용'),
+(14,'제목1','내용');
+
+select *
+from boards;
+
+# 게시글 목록 조회(inner join)
+
+select
+	b.id as 글번호,
+    b.title as 제목,
+    m.name as 작성자, # members 테이블에서 가져옴
+	b.created_at as 작성일
+from boards b
+inner join members m on b. member_id = m.id
+order by b.created_at desc; # 최신글 순으로 정렬
+
+# 특정 사용자의 글만 조회( where 절 조합)
+
+select
+	b.title,
+    b.content,
+    m.name as 작성자, # members 테이블에서 가져옴
+    b.created_at
+from boards b
+join members m on b.member_id = m.id
+where m.uid = 'lhj'; # 특정 아이디를 가진 유저의 글만 필터링
+
+# 관리자용 : 통계 조회(group by 조합)
+select
+	m.name,
+    m.uid,
+    count(b.id) as 작성글수 # group by와 셋트
+from members m
+left join boards b on m.id = b.member_id
+group by m.id;
+
+# 작성자 이름으로 검색하기 (like 활용)
+select
+	b.id as 글번호,
+    b.title as 제목,
+    m.name as 작성자,
+    b.created_at as 작성일
+from boards b
+inner join members m on b.member_id = m.id
+where m.name like '%효정%'
+order by b.created_at desc;
+#like = 문자열추출
+# where m.name like '%검색어%' or b.title like '%검색어%'
+
+ALTER TABLE boards
+add active TINYINT(1) NOT NULL DEFAULT 1;
+
+
+
