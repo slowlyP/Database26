@@ -189,5 +189,44 @@ order by b.created_at desc;
 ALTER TABLE boards
 add active TINYINT(1) NOT NULL DEFAULT 1;
 
+SELECT id, title
+FROM boards
+WHERE title LIKE '%오늘%';
 
+CREATE TABLE items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    price INT NOT NULL,
+    stock INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
+CREATE TABLE orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    member_id INT NOT NULL,
+    total_price INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'paid',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (member_id) REFERENCES members(id)
+);
+
+CREATE TABLE order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    item_id INT NOT NULL,
+    qty INT NOT NULL,
+    price INT NOT NULL,
+
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
+INSERT INTO items (code, name, category, price, stock)
+VALUES
+('I001','키보드','IT',30000,10),
+('I002','마우스','IT',15000,20),
+('D001','콜라','음료',2000,50),
+('B001','파이썬책','도서',25000,5);
